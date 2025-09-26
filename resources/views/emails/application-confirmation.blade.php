@@ -246,7 +246,9 @@
     <div class="content">
       <div class="success-badge">✓ Successfully Submitted</div>
 
-      <b style="font-size: 18px">Dear {{ $application->first_name }} {{ $application->last_name }},</b>
+      <div>
+        <b style="font-size: 18px">Dear {{ $application->first_name }} {{ $application->last_name }},</b>
+      </div>
 
       <p style="font-size: 16px">Thank you for submitting your grant application. We have successfully received your
         application and it is now

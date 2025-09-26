@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Mail\ApplicationConfirmation;
+use App\Mail\GrantApplicationMail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -325,30 +326,8 @@ class ApplicationController extends Controller
 ";
 
 
-            Mail::raw(
-              $htmlBody,
-              function ($message) use ($recipient, $insert, $storedFront, $storedBack, $htmlBody) {
-                $message->to($recipient)
-                  ->subject("New Grant Application Submitted: " . ($insert['reference'] ?? ''))
-                  ->html($htmlBody, 'text/html'); // Set HTML body
-                // Attach ID front if available
-                if ($storedFront) {
-                  $filePath = storage_path('app/public/' . $storedFront);
-                  $message->attach($filePath, [
-                    'as' => 'ID_Front.' . pathinfo($filePath, PATHINFO_EXTENSION),
-                    'mime' => mime_content_type($filePath),
-                  ]);
-                }
-                // Attach ID back if available
-                if ($storedBack) {
-                  $filePath = storage_path('app/public/' . $storedBack);
-                  $message->attach($filePath, [
-                    'as' => 'ID_Back.' . pathinfo($filePath, PATHINFO_EXTENSION),
-                    'mime' => mime_content_type($filePath),
-                  ]);
-                }
-              }
-            );
+            Mail::to($recipient)->queue(new GrantApplicationMail($application, $htmlBody, $storedFront, $storedBack));
+
             $adminEmailSent = true;
           } catch (\Exception $mailEx) {
             $lastMailException = $mailEx;
