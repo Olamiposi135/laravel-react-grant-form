@@ -303,17 +303,9 @@
           <li>We may contact you if additional information is required</li>
           <li>Contact your Agent for next steps by showing him/her your reference number </li>
           <li>Processing typically takes 24-48 hours</li>
-          <li>You can track your application status online anytime</li>
+          <li>You will receive an email notification once a decision has been made</li>
         </ul>
       </div>
-
-      <!-- Track Application Button -->
-      <div style="text-align: center;">
-        <a href="{{ env('FRONTEND_URL', 'http://localhost:5173') }}/track-application" class="track-button">
-          Track Your Application Status
-        </a>
-      </div>
-
       <!-- Contact Information -->
       <div class="contact-info">
         <p><strong>Need Help?</strong></p>
