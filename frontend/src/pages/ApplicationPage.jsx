@@ -155,8 +155,8 @@ function validateStep(step, form) {
             errors.amount_applied = "Select a grant amount category";
         if (!form.grantDescription || form.grantDescription.length < 30)
             errors.grantDescription = "Description required (min 30 chars)";
-        if (!form.id_front) errors.id_front = "Front of ID is required";
-        if (!form.id_back) errors.id_back = "Back of ID is required";
+        // if (!form.id_front) errors.id_front = "Front of ID is required";
+        // if (!form.id_back) errors.id_back = "Back of ID is required";
     }
     return errors;
 }
@@ -219,6 +219,7 @@ const ApplicationPage = () => {
     const backInputRef = useRef(null);
 
     const navigate = useNavigate();
+    const formRef = useRef(null);
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -300,9 +301,9 @@ const ApplicationPage = () => {
         if (type === "file") {
             const file = files && files[0] ? files[0] : null;
 
-            // Allowed types and max size (match backend: 2048 KB)
+            // Allowed types and max size (match backend: 20480 KB)
             const allowed = ["image/jpeg", "image/jpg", "image/png"];
-            const maxBytes = 2048 * 1024; // 2MB
+            const maxBytes = 20480 * 1024; // 20MB
 
             // If user already uploaded a file for this field, ask before overriding
             if (previews[name]) {
@@ -357,7 +358,7 @@ const ApplicationPage = () => {
             if (file.size > maxBytes) {
                 setErrors((prev) => ({
                     ...prev,
-                    [name]: "File too large. Max 2MB allowed.",
+                    [name]: "File too large. Max 20MB allowed.",
                 }));
                 if (name === "id_front" && frontInputRef.current)
                     frontInputRef.current.value = "";
@@ -424,6 +425,7 @@ const ApplicationPage = () => {
             setErrors(stepErrors);
             if (Object.keys(stepErrors).length === 0) {
                 setCurrentStep((prev) => prev + 1);
+                scrollToFormTop();
             }
             setNavLoading((prev) => ({ ...prev, next: false }));
         }, 300); // short delay for spinner feedback
@@ -434,6 +436,7 @@ const ApplicationPage = () => {
         setTimeout(() => {
             setErrors({});
             setCurrentStep((prev) => prev - 1);
+            scrollToFormTop();
             setNavLoading((prev) => ({ ...prev, prev: false }));
         }, 300); // short delay for spinner feedback
     };
@@ -485,16 +488,19 @@ const ApplicationPage = () => {
 
     // Replace handleSubmit with improved error handling and user-friendly messages
     const handleSubmit = async () => {
+        scrollToFormTop(); // Scroll to top on submit attempt
         // quick pre-flight file checks (same limits as backend)
-        const maxBytes = 2048 * 1024;
+        const maxBytes = 20480 * 1024;
         if (form.id_front && form.id_front.size > maxBytes) {
             setSubmitError(
-                "Front ID file too large (max 2MB). Please replace."
+                "Front ID file too large (max 20MB). Please replace."
             );
             return;
         }
         if (form.id_back && form.id_back.size > maxBytes) {
-            setSubmitError("Back ID file too large (max 2MB). Please replace.");
+            setSubmitError(
+                "Back ID file too large (max 20MB). Please replace."
+            );
             return;
         }
 
@@ -520,14 +526,13 @@ const ApplicationPage = () => {
 
             // Safe env lookup: avoid referencing process directly in browser
             const safeEnv =
-                typeof process !== "undefined" &&
-                process &&
-                process.env &&
-                process.env.REACT_APP_API_URL
-                    ? process.env.REACT_APP_API_URL
-                    : typeof window !== "undefined" && window.REACT_APP_API_URL
-                    ? window.REACT_APP_API_URL
-                    : null;
+                // For Create React App
+                (typeof process !== "undefined" &&
+                    process.env?.REACT_APP_API_URL) ||
+                // For Vite
+                import.meta?.env?.VITE_API_URL ||
+                // Manual fallback
+                null;
 
             const fallbackBase = safeEnv || "http://localhost:8000";
             const tryUrls = [
@@ -544,8 +549,7 @@ const ApplicationPage = () => {
                     const res = await axios.post(url, data, {
                         headers: { "Content-Type": "multipart/form-data" },
                         validateStatus: () => true, // Don't throw on HTTP error status
-                        timeout: 60000, // 60 second axios timeout
-                        signal: controller.signal,
+                        timeout: 120000, // 120 second axios timeout
                     });
 
                     // Clear timeout since we got a response
@@ -577,7 +581,7 @@ const ApplicationPage = () => {
                                 "Please check your information and try again. Some fields may contain invalid data.";
                         } else if (res.status === 413) {
                             lastError =
-                                "Files are too large. Please use smaller images (max 2MB each).";
+                                "Files are too large. Please use smaller images (max 20MB each).";
                         } else {
                             lastError =
                                 "Please check your information and try again.";
@@ -754,6 +758,15 @@ const ApplicationPage = () => {
         }
     };
 
+    const scrollToFormTop = () => {
+        if (formRef.current) {
+            formRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+    };
+
     // Stepper UI
     const stepLabels = [
         "Contact Information",
@@ -826,7 +839,7 @@ const ApplicationPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 mt-18">
-            <section className=" pt-16">
+            <section className=" pt-16 ">
                 <div className="formHeader text-gray-800 flex flex-col justify-center items-center space-y-6 px-4 text-center">
                     <div className="absolute inset-0 bg-black opacity-40"></div>
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg mb-4 z-10">
@@ -847,7 +860,7 @@ const ApplicationPage = () => {
                     <h2 className="font-bold text-3xl md:text-5xl text-blue-400 z-10">
                         Grant Application Form
                     </h2>
-                    <p className="max-w-2xl text-center font-medium text-lg text-gray-200 leading-relaxed z-10">
+                    <p className="max-w-2xl text-center font-medium text-lg text-gray-200 dark:text-gray-300 leading-relaxed z-10">
                         Complete the form below to apply for financial
                         assistance. All information provided will be kept
                         confidential and secure.
@@ -856,9 +869,9 @@ const ApplicationPage = () => {
             </section>
 
             {!isOnline && (
-                <div className="max-w-4xl mx-auto px-4 mb-6">
+                <div className="max-w-4xl mx-auto px-4 mb-6 mt-2">
                     <div
-                        className="p-4 text-amber-800 rounded-xl bg-amber-50 border border-amber-200"
+                        className="p-4 text-amber-800 dark:text-amber-100 rounded-xl bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700"
                         role="alert"
                     >
                         <div className="flex items-center gap-3">
@@ -886,8 +899,8 @@ const ApplicationPage = () => {
             )}
 
             {submitError && (
-                <div className="max-w-4xl mx-auto px-4 mb-6">
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div className="max-w-4xl mx-auto px-4 mb-6 mt-2">
+                    <div className="p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-xl">
                         <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mt-0.5">
                                 <svg
@@ -903,15 +916,15 @@ const ApplicationPage = () => {
                                 </svg>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-red-800 font-semibold mb-1">
+                                <h3 className="text-red-800 dark:text-red-100 font-semibold mb-1">
                                     Submission Error
                                 </h3>
-                                <p className="text-red-700 text-sm">
+                                <p className="text-red-700  dark:text-red-50 text-sm">
                                     {submitError}
                                 </p>
                             </div>
                             <button
-                                className="text-red-400 hover:text-red-600 transition-colors"
+                                className="text-red-400 hover:text-red-600 dark:text-red-100 hover:dark:text-red-200 transition-colors"
                                 onClick={() => setSubmitError("")}
                             >
                                 <svg
@@ -934,16 +947,16 @@ const ApplicationPage = () => {
             {/* Render spinner-only container when showSpinnerOnly is true,
                 otherwise render the full form (existing markup). */}
             {showSpinnerOnly ? (
-                <div className="max-w-3xl mx-auto my-20">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 py-16 px-6 md:px-10">
-                        <div className="flex flex-col items-center justify-center">
+                <div className="max-w-3xl mx-auto py-36">
+                    <div className="w-[90%] mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 py-12 px-4 md:px-6">
+                        <div className="flex flex-col items-center justify-center text-center">
                             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                                 <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                             </div>
-                            <h3 className="text-2xl font-bold text-blue-500 mb-2">
+                            <h3 className="text-xl md:text-2xl font-bold  text-blue-500 dark:text-blue-400 mb-2">
                                 Processing Your Application
                             </h3>
-                            <p className="text-gray-600 max-w-md text-center">
+                            <p className="text-gray-600 dark:text-gray-400 max-w-md text-center">
                                 Please wait while we securely review and submit
                                 your grant application. Do not close this
                                 window.
@@ -952,11 +965,15 @@ const ApplicationPage = () => {
                     </div>
                 </div>
             ) : (
-                <div className="formPage relative max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 py-8 px-6 md:px-10 my-10 z-10">
-                    {/* Enhanced submission overlay with shimmer effect */}
-                    {submitting && (
-                        <>
-                            <style>{`
+                <div className="px-2">
+                    <div
+                        className="formPage   relative   max-w-4xl mx-auto bg-white  rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 py-8 px-6 md:px-10 my-10 z-10"
+                        ref={formRef}
+                    >
+                        {/* Enhanced submission overlay with shimmer effect */}
+                        {submitting && (
+                            <>
+                                <style>{`
                             .submission-shimmer {
                                 background: linear-gradient(90deg, 
                                     rgba(59, 130, 246, 0.1) 0%, 
@@ -991,1289 +1008,1397 @@ const ApplicationPage = () => {
                                 100% { transform: scale(1.2); opacity: 0; }
                             }
                         `}</style>
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-2xl">
-                                <div className="submission-shimmer absolute inset-0 rounded-2xl"></div>
-                                <div className="relative z-10 flex flex-col items-center">
-                                    {/* Enhanced loading animation */}
-                                    <div className="relative mb-8">
-                                        <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                            <div className="absolute inset-0 w-24 h-24 border-2 border-blue-200 rounded-full pulse-ring"></div>
-                                        </div>
-                                    </div>
+                                <div
+                                    className="max-w-[90%] w-full mx-auto absolute inset-0 z-50 flex flex-col items-center justify-center 
+    bg-white/95 dark:bg-gray-900/95 
+    backdrop-blur-sm rounded-2xl"
+                                >
+                                    <div className="submission-shimmer absolute inset-0 rounded-2xl"></div>
 
-                                    {/* Shimmer text */}
-                                    <div className="text-center space-y-3">
-                                        <h3 className="text-2xl md:text-3xl font-bold text-blue-500">
-                                            Processing Your Application
-                                        </h3>
-                                        <p className="text-gray-600 max-w-md">
-                                            Please wait while we securely submit
-                                            your grant application. Do not close
-                                            this window.
-                                        </p>
-                                        <div className="flex items-center justify-center gap-2 mt-4">
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                                            <div
-                                                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                                                style={{
-                                                    animationDelay: "0.1s",
-                                                }}
-                                            ></div>
-                                            <div
-                                                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                                                style={{
-                                                    animationDelay: "0.2s",
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {isSlowNetwork && !submitting ? (
-                        <div className="space-y-8">
-                            {/* Enhanced skeleton loading */}
-                            <div className="animate-pulse">
-                                <div className="mb-8">
-                                    <div className="flex justify-between mb-4">
-                                        {Array.from({ length: 4 }).map(
-                                            (_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex items-center space-x-3"
-                                                >
-                                                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                                                    <div className="w-20 h-4 bg-gray-200 rounded"></div>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                    <div className="w-full h-2 bg-gray-200 rounded-full"></div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="w-1/3 h-8 bg-gray-200 rounded"></div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {Array.from({ length: 6 }).map(
-                                            (_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="space-y-3"
-                                                >
-                                                    <div className="w-full h-4 bg-gray-200 rounded"></div>
-                                                    <div className="w-full h-12 bg-gray-200 rounded-lg"></div>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Enhanced stepper */}
-                            <div className="mb-12">
-                                <div className="w-full">
-                                    <div className="flex items-center justify-between mb-6">
-                                        {stepLabels.map((label, idx) => {
-                                            const stepIndex = idx + 1;
-                                            const completed =
-                                                currentStep > stepIndex;
-                                            const active =
-                                                currentStep === stepIndex;
-                                            return (
-                                                <div
-                                                    key={label}
-                                                    className="flex-1 flex flex-col items-center text-center relative"
-                                                >
-                                                    <div
-                                                        className={`flex items-center justify-center rounded-full font-bold text-sm transition-all duration-300 ${
-                                                            completed
-                                                                ? "bg-green-500 text-white shadow-lg"
-                                                                : active
-                                                                ? "bg-blue-600 text-white shadow-lg ring-4 ring-blue-600/20"
-                                                                : "bg-gray-200 text-gray-500"
-                                                        } w-12 h-12 md:w-14 md:h-14`}
-                                                    >
-                                                        {completed ? (
-                                                            <svg
-                                                                className="w-6 h-6"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="3"
-                                                                    d="M5 13l4 4L19 7"
-                                                                />
-                                                            </svg>
-                                                        ) : (
-                                                            stepIndex
-                                                        )}
-                                                    </div>
-
-                                                    {/* Connection line */}
-                                                    {idx <
-                                                        stepLabels.length -
-                                                            1 && (
-                                                        <div
-                                                            className={`absolute top-6 left-1/2 w-full h-0.5 -z-10 transition-all duration-300 ${
-                                                                currentStep >
-                                                                stepIndex
-                                                                    ? "bg-green-500"
-                                                                    : "bg-gray-200"
-                                                            }`}
-                                                        ></div>
-                                                    )}
-
-                                                    <div
-                                                        className={`mt-3 text-xs md:text-sm font-medium transition-colors duration-300 ${
-                                                            active
-                                                                ? "text-blue-600"
-                                                                : completed
-                                                                ? "text-green-600"
-                                                                : "text-gray-500"
-                                                        }`}
-                                                    >
-                                                        {label}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Progress bar */}
-                                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-all duration-500 ease-out"
-                                            style={{
-                                                width: `${
-                                                    ((currentStep - 1) /
-                                                        (totalSteps - 1)) *
-                                                    100
-                                                }%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Form steps with enhanced styling */}
-                            {currentStep === 1 && (
-                                <div className="space-y-8">
-                                    <div className="border-b border-gray-200 pb-4">
-                                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                <svg
-                                                    className="w-5 h-5 text-blue-600"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            Personal Information
-                                        </h2>
-                                        <p className="text-gray-600 mt-2">
-                                            Please provide your basic contact
-                                            information.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                First Name
-                                            </label>
-                                            <input
-                                                name="first_name"
-                                                value={form.first_name}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("first_name")
-                                                }
-                                                className="input"
-                                                placeholder="Enter your first name"
-                                            />
-                                            {errors.first_name && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.first_name}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Middle Name
-                                            </label>
-                                            <input
-                                                name="middle_name"
-                                                value={form.middle_name}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("middle_name")
-                                                }
-                                                className="input"
-                                                placeholder="Enter your middle name"
-                                            />
-                                            {errors.middle_name && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.middle_name}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Last Name
-                                            </label>
-                                            <input
-                                                name="last_name"
-                                                value={form.last_name}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("last_name")
-                                                }
-                                                className="input"
-                                                placeholder="Enter your last name"
-                                            />
-                                            {errors.last_name && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.last_name}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="md:col-span-2 space-y-2">
-                                            <label className="required-input-label">
-                                                Address
-                                            </label>
-                                            <input
-                                                name="address"
-                                                value={form.address}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("address")
-                                                }
-                                                className="input"
-                                                placeholder="Street address, P.O. box, etc."
-                                            />
-                                            {errors.address && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.address}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Zip Code
-                                            </label>
-                                            <input
-                                                name="zipCode"
-                                                value={form.zipCode}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("zipCode")
-                                                }
-                                                className="input"
-                                                maxLength={5}
-                                                placeholder="12345"
-                                                inputMode="numeric"
-                                            />
-                                            {errors.zipCode && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.zipCode}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                City
-                                            </label>
-                                            <input
-                                                name="city"
-                                                value={form.city}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("city")
-                                                }
-                                                className="input"
-                                                placeholder="Enter your city"
-                                            />
-                                            {errors.city && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.city}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                State *
-                                            </label>
-                                            <input
-                                                name="state"
-                                                value={form.state}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("state")
-                                                }
-                                                className="input"
-                                                placeholder="Enter your state"
-                                            />
-                                            {errors.state && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.state}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Gender
-                                            </label>
-                                            <select
-                                                name="gender"
-                                                value={form.gender}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("gender")
-                                                }
-                                                className="input"
-                                            >
-                                                <option value="">
-                                                    Choose Gender
-                                                </option>
-                                                {genderOptions.map((opt) => (
-                                                    <option
-                                                        key={opt}
-                                                        value={opt}
-                                                    >
-                                                        {opt}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {errors.gender && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.gender}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Date of Birth
-                                            </label>
-                                            <input
-                                                name="dob"
-                                                type="date"
-                                                value={form.dob}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("dob")
-                                                }
-                                                className="input"
-                                            />
-                                            {errors.dob && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.dob}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Phone Number
-                                            </label>
-                                            <input
-                                                name="phone_number"
-                                                value={form.phone_number}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("phone_number")
-                                                }
-                                                className="input"
-                                                placeholder="Phone number ( e.g. 555-123-4567)"
-                                                type="tel"
-                                                minLength={10}
-                                                maxLength={15}
-                                            />
-                                            {errors.phone_number && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.phone_number}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="required-input-label">
-                                                Email
-                                            </label>
-                                            <input
-                                                name="email"
-                                                value={form.email}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("email")
-                                                }
-                                                className="input"
-                                                placeholder="you@example.com"
-                                                type="email"
-                                            />
-                                            <span className="text-sm text-gray-800 italic">
-                                                This email address will be used
-                                                for communication regarding your
-                                                application.
-                                            </span>
-                                            {errors.email && (
-                                                <p className="text-red-600 text-sm flex items-center gap-1">
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                    {errors.email}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Step 2 */}
-                            {currentStep === 2 && (
-                                <>
-                                    <h2 className="font-bold text-2xl mb-10 border-b-2 text-gray-700">
-                                        PERSONAL INFORMATION :
-                                    </h2>
-                                    <div className="space-y-8">
-                                        <div>
-                                            <label className="required-input-label">
-                                                Monthly Income
-                                            </label>
-                                            <input
-                                                name="income"
-                                                value={form.income}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("income")
-                                                }
-                                                className="input"
-                                            />
-                                            {errors.income && (
-                                                <span className="text-red-500">
-                                                    {errors.income}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col md:flex-row gap-7">
-                                            <div className="w-full">
-                                                <label className="label">
-                                                    Marital Status
-                                                </label>
-                                                <select
-                                                    name="maritalStatus"
-                                                    value={form.maritalStatus}
-                                                    onChange={handleChange}
-                                                    className="input"
-                                                >
-                                                    <option value="">
-                                                        Select your status
-                                                    </option>
-                                                    {maritalOptions.map(
-                                                        (opt) => (
-                                                            <option
-                                                                key={opt}
-                                                                value={opt}
-                                                            >
-                                                                {opt}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                            </div>
-                                            <div className="w-full">
-                                                <label className="required-input-label">
-                                                    SSN
-                                                </label>
-                                                <input
-                                                    name="ssn"
-                                                    value={form.ssn}
-                                                    onChange={handleChange}
-                                                    onFocus={() =>
-                                                        handleFocus("ssn")
-                                                    }
-                                                    className="input"
-                                                    maxLength={11}
-                                                    placeholder="XXX-XX-XXXX"
-                                                    inputMode="numeric"
-                                                    pattern="[0-9\-]*"
-                                                />
-                                                {errors.ssn && (
-                                                    <span className="text-red-500">
-                                                        {errors.ssn}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col md:flex-row gap-7">
-                                            <div className="w-full">
-                                                <label className="label">
-                                                    Next Of Kin
-                                                </label>
-                                                <input
-                                                    name="nextOfKin"
-                                                    value={form.nextOfKin}
-                                                    onChange={handleChange}
-                                                    className="input"
-                                                />
-                                            </div>
-                                            <div className="w-full">
-                                                <label className="label">
-                                                    Mother's Name
-                                                </label>
-                                                <input
-                                                    name="motherName"
-                                                    value={form.motherName}
-                                                    onChange={handleChange}
-                                                    className="input"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col md:flex-row gap-7">
-                                            <div className="w-full">
-                                                <label className="label">
-                                                    Hearing or Deaf?
-                                                </label>
-                                                <select
-                                                    name="hearingStatus"
-                                                    value={form.hearingStatus}
-                                                    onChange={handleChange}
-                                                    className="input"
-                                                >
-                                                    <option value="">
-                                                        Select Status
-                                                    </option>
-                                                    {hearingOptions.map(
-                                                        (opt) => (
-                                                            <option
-                                                                key={opt}
-                                                                value={opt}
-                                                            >
-                                                                {opt}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                            </div>
-                                            <div className="w-full">
-                                                <label className="label">
-                                                    Housing Type
-                                                </label>
-                                                <select
-                                                    name="housingType"
-                                                    value={form.housingType}
-                                                    onChange={handleChange}
-                                                    className="input"
-                                                >
-                                                    <option value="">
-                                                        Select Option
-                                                    </option>
-                                                    {housingType.map((opt) => (
-                                                        <option
-                                                            key={opt}
-                                                            value={opt}
-                                                        >
-                                                            {opt}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="required-input-label">
-                                                Name of your Bank's
-                                            </label>
-                                            <input
-                                                name="bank_name"
-                                                value={form.bank_name}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus("bank_name")
-                                                }
-                                                className="input"
-                                            />
-                                            <h2 className="text-gray-600 text-2xl font-semibold">
-                                                Do you have Credit Card "s"?
-                                            </h2>
-                                            <div className="flex space-x-10">
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        name="has_cards"
-                                                        checked={
-                                                            form.has_cards ===
-                                                            "yes"
-                                                        }
-                                                        onChange={() =>
-                                                            handleRadio(
-                                                                "has_cards",
-                                                                "yes"
-                                                            )
-                                                        }
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "has_cards"
-                                                            )
-                                                        }
-                                                    />
-                                                    <span className="text-xl font-semibold ml-2">
-                                                        Yes
-                                                    </span>
-                                                </label>
-                                                <label>
-                                                    <input
-                                                        type="radio"
-                                                        name="has_cards"
-                                                        checked={
-                                                            form.has_cards ===
-                                                            "no"
-                                                        }
-                                                        onChange={() =>
-                                                            handleRadio(
-                                                                "has_cards",
-                                                                "no"
-                                                            )
-                                                        }
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "has_cards"
-                                                            )
-                                                        }
-                                                    />
-                                                    <span className="text-xl font-semibold ml-2">
-                                                        No
-                                                    </span>
-                                                </label>
-                                            </div>
-                                            {errors.has_cards && (
-                                                <span className="text-red-500">
-                                                    {errors.has_cards}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {form.has_cards === "yes" && (
-                                            <div className="flex flex-col md:flex-row gap-7">
-                                                <div className="w-full">
-                                                    <label className="required-input-label">
-                                                        Number of Credit Cards
-                                                    </label>
-                                                    <input
-                                                        name="no_of_cards"
-                                                        type="number"
-                                                        value={form.no_of_cards}
-                                                        onChange={handleChange}
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "no_of_cards"
-                                                            )
-                                                        }
-                                                        className="input"
-                                                    />
-                                                    <span className="text-slate-700 my-1 block">
-                                                        Note: This won't affect
-                                                        your credit in whatever
-                                                        way
-                                                    </span>
-                                                    {errors.no_of_cards && (
-                                                        <span className="text-red-500">
-                                                            {errors.no_of_cards}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="w-full">
-                                                    <label className="required-input-label">
-                                                        Credit Limit ($)
-                                                    </label>
-                                                    <input
-                                                        name="card_limit"
-                                                        value={form.card_limit}
-                                                        onChange={handleChange}
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "card_limit"
-                                                            )
-                                                        }
-                                                        className="input"
-                                                    />
-                                                    {errors.card_limit && (
-                                                        <span className="text-red-500">
-                                                            {errors.card_limit}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Step 3 */}
-                            {currentStep === 3 && (
-                                <>
-                                    <h2 className="font-bold text-2xl mb-10 border-b-2 text-gray-700">
-                                        GRANT DETAILS :
-                                    </h2>
-                                    <div className="space-y-10">
-                                        <div className=" flex flex-col md:flex-row gap-7 items-center">
-                                            <div className="w-full">
-                                                <label className="required-input-label">
-                                                    Grant Amount Category
-                                                </label>
-                                                <select
-                                                    name="amount_applied"
-                                                    value={form.amount_applied}
-                                                    onChange={handleChange}
-                                                    onFocus={() =>
-                                                        handleFocus(
-                                                            "amount_applied"
-                                                        )
-                                                    }
-                                                    className="input"
-                                                >
-                                                    <option value="">
-                                                        Select a grant amount
-                                                        category
-                                                    </option>
-                                                    {grantAmountOptions.map(
-                                                        (opt) => (
-                                                            <option
-                                                                key={opt}
-                                                                value={opt}
-                                                            >
-                                                                {opt}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </select>
-                                                {errors.amount_applied && (
-                                                    <span className="text-red-500">
-                                                        {errors.amount_applied}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="w-full">
-                                                <label className="required-input-label">
-                                                    Check the area of Grant you
-                                                    are interested in
-                                                </label>
-                                                <select
-                                                    name="grantSelect"
-                                                    value={form.grantSelect}
-                                                    onChange={handleChange}
-                                                    onFocus={() =>
-                                                        handleFocus(
-                                                            "grantSelect"
-                                                        )
-                                                    }
-                                                    className="input"
-                                                >
-                                                    <option value="">
-                                                        Select the area you're
-                                                        interested
-                                                    </option>
-                                                    {grantOptions.map((opt) => (
-                                                        <option
-                                                            key={opt}
-                                                            value={opt}
-                                                        >
-                                                            {opt}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {errors.grantSelect && (
-                                                    <span className="text-red-500">
-                                                        {errors.grantSelect}
-                                                    </span>
-                                                )}
+                                    <div className="relative z-10 flex flex-col items-center">
+                                        {/* Enhanced loading animation */}
+                                        <div className="relative mb-8">
+                                            <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                                                <div className="w-16 h-16 border-4 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                                                <div className="absolute inset-0 w-24 h-24 border-2 border-blue-200 dark:border-blue-700 rounded-full pulse-ring"></div>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="required-input-label">
-                                                Describe in detail who you're
-                                                apply for the Federal Government
-                                                Grant
-                                            </label>
-                                            <textarea
-                                                name="grantDescription"
-                                                value={form.grantDescription}
-                                                onChange={handleChange}
-                                                onFocus={() =>
-                                                    handleFocus(
-                                                        "grantDescription"
-                                                    )
-                                                }
-                                                className="input"
-                                                rows={6}
-                                            />
-                                            {errors.grantDescription && (
-                                                <span className="text-red-500">
-                                                    {errors.grantDescription}
-                                                </span>
-                                            )}
-                                            <span className="text-lg my-2 block">
-                                                Be specific about your needs and
-                                                how this grant will help you
-                                                achieve your goals.
-                                            </span>
-                                        </div>
-                                        <div className="p-10 border-opacity-50 border-2 border-gray-600 rounded-md max-w-screen-md mx-auto px-4">
-                                            <h3 className="text-2xl font-semibold text-gray-700 text-center my-7">
-                                                Upload a clear picture of any
-                                                Government ID or Drivers License
+                                        {/* Shimmer text */}
+                                        <div className="text-center space-y-3">
+                                            <h3 className="text-2xl md:text-3xl font-bold text-blue-500 dark:text-blue-400">
+                                                Processing Your Application
                                             </h3>
-                                            <div className="space-y-8 flex flex-col justify-center items-center">
-                                                <div className="flex flex-col space-y-3">
-                                                    <label className="text-center text-xl mr-1 font-medium text-blue-800 after:content-['*'] after:text-red-500">
-                                                        Upload Image "Front
-                                                        Picture"
-                                                    </label>
+                                            <p className="text-gray-600 dark:text-gray-300 max-w-md">
+                                                Please wait while we securely
+                                                submit your grant application.
+                                                Do not close this window.
+                                            </p>
 
-                                                    <input
-                                                        ref={frontInputRef}
-                                                        name="id_front"
-                                                        type="file"
-                                                        accept=".jpg,.jpeg,.png"
-                                                        onChange={handleChange}
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "id_front"
-                                                            )
-                                                        }
-                                                        className="input"
-                                                        disabled={false}
-                                                    />
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        Accepted: jpg, jpeg, png
-                                                        — Max 2MB
-                                                    </div>
-                                                    {errors.id_front && (
-                                                        <span className="text-red-500">
-                                                            {errors.id_front}
-                                                        </span>
-                                                    )}
-                                                    {form.id_front &&
-                                                        previews.id_front && (
-                                                            <div className="my-3 rounded-md">
-                                                                <PreviewImg
-                                                                    src={
-                                                                        previews.id_front
-                                                                    }
-                                                                    alt="ID Front"
-                                                                    className="max-w-xs mx-auto my-3"
-                                                                    style={{
-                                                                        maxWidth: 300,
-                                                                    }}
-                                                                />
-                                                                <div className="flex justify-center mt-2 gap-3">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn-secondary px-3 py-1 text-sm flex items-center gap-2"
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                frontInputRef.current
-                                                                            )
-                                                                                frontInputRef.current.click();
-                                                                        }}
-                                                                    >
-                                                                        Update{" "}
-                                                                        <FaEdit />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="px-3 py-1 text-red-700 focus:text-red-800"
-                                                                        onClick={() =>
-                                                                            deleteImage(
-                                                                                "id_front"
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <RiDeleteBinLine
-                                                                            size={
-                                                                                28
-                                                                            }
-                                                                        />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                </div>
-                                                <div className="flex flex-col space-y-3">
-                                                    <label className="text-center text-xl mr-1 font-medium text-blue-800 after:content-['*'] after:text-red-500">
-                                                        Upload Image "Back
-                                                        Picture"
-                                                    </label>
-
-                                                    <input
-                                                        ref={backInputRef}
-                                                        name="id_back"
-                                                        type="file"
-                                                        accept=".jpg,.jpeg,.png"
-                                                        onChange={handleChange}
-                                                        onFocus={() =>
-                                                            handleFocus(
-                                                                "id_back"
-                                                            )
-                                                        }
-                                                        className="input"
-                                                        disabled={false}
-                                                    />
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        Accepted: jpg, jpeg, png
-                                                        — Max 2MB
-                                                    </div>
-                                                    {errors.id_back && (
-                                                        <span className="text-red-500">
-                                                            {errors.id_back}
-                                                        </span>
-                                                    )}
-                                                    {form.id_back &&
-                                                        previews.id_back && (
-                                                            <div className="my-3 rounded-md">
-                                                                <PreviewImg
-                                                                    src={
-                                                                        previews.id_back
-                                                                    }
-                                                                    alt="ID Back"
-                                                                    className="max-w-xs mx-auto my-3"
-                                                                    style={{
-                                                                        maxWidth: 300,
-                                                                    }}
-                                                                />
-                                                                <div className="flex justify-center mt-2 gap-3">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn-secondary px-3 py-1 text-sm flex items-center gap-2"
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                backInputRef.current
-                                                                            )
-                                                                                backInputRef.current.click();
-                                                                        }}
-                                                                    >
-                                                                        Update{" "}
-                                                                        <FaEdit />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="text-red-700 px-3 py-1 focus:text-red-800"
-                                                                        onClick={() =>
-                                                                            deleteImage(
-                                                                                "id_back"
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <RiDeleteBinLine
-                                                                            size={
-                                                                                28
-                                                                            }
-                                                                        />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                </div>
+                                            <div className="flex items-center justify-center gap-2 mt-4">
+                                                <div className="w-2 h-2 bg-blue-500 dark:bg-blue-300 rounded-full animate-bounce"></div>
+                                                <div
+                                                    className="w-2 h-2 bg-blue-500 dark:bg-blue-300 rounded-full animate-bounce"
+                                                    style={{
+                                                        animationDelay: "0.1s",
+                                                    }}
+                                                ></div>
+                                                <div
+                                                    className="w-2 h-2 bg-blue-500 dark:bg-blue-300 rounded-full animate-bounce"
+                                                    style={{
+                                                        animationDelay: "0.2s",
+                                                    }}
+                                                ></div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Step 4: Review Page */}
-                            {currentStep === 4 && (
-                                <div className="relative">
-                                    <div className="py-8 px-2 md:px-8 space-y-8 bg-gradient-to-br from-slate-900/90 via-slate-800/95 to-slate-900/90 rounded-2xl shadow-2xl border border-blue-900/10 max-w-3xl mx-auto">
-                                        <h3 className="font-bold text-2xl md:text-3xl mb-8 border-b-2 border-blue-700/30 text-blue-100 text-center tracking-wide">
-                                            Review Your Application Before
-                                            Submitting
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <ul className="space-y-3">
-                                                {reviewFields.map(
-                                                    ({ key, label }) => {
-                                                        // Exclude card fields if not applicable
-                                                        if (
-                                                            key ===
-                                                                "no_of_cards" &&
-                                                            form.has_cards !==
-                                                                "yes"
-                                                        )
-                                                            return null;
-                                                        if (
-                                                            key ===
-                                                                "card_limit" &&
-                                                            form.has_cards !==
-                                                                "yes"
-                                                        )
-                                                            return null;
-                                                        // Hide empty fields for a cleaner review
-                                                        if (!form[key])
-                                                            return null;
-                                                        return (
-                                                            <li
-                                                                key={key}
-                                                                className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 bg-slate-800/60 rounded-lg px-3 py-2 overflow-auto"
-                                                            >
-                                                                <span className="font-semibold text-blue-200 text-base md:text-lg w-44 md:w-40">
-                                                                    {label}:
-                                                                </span>
-                                                                <span className="text-blue-50 text-base md:text-lg break-words">
-                                                                    {form[key]}
-                                                                </span>
-                                                            </li>
-                                                        );
-                                                    }
-                                                )}
-                                            </ul>
-                                            <div className="flex flex-col gap-6 items-center justify-center">
-                                                <div className="w-full flex flex-col items-center">
-                                                    <span className="font-semibold text-blue-200 text-base md:text-lg mb-2">
-                                                        Front Image
-                                                    </span>
-                                                    {form.id_front &&
-                                                    previews.id_front ? (
-                                                        <PreviewImg
-                                                            className="rounded-xl shadow-lg border border-blue-900/20 w-full max-w-xs"
-                                                            src={
-                                                                previews.id_front
-                                                            }
-                                                            alt="Front Picture"
-                                                            style={{
-                                                                maxWidth: 260,
-                                                                minHeight: 120,
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <span className="text-blue-400 text-xs italic">
-                                                            No image uploaded
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="w-full flex flex-col items-center">
-                                                    <span className="font-semibold text-blue-200 text-base md:text-lg mb-2">
-                                                        Back Image
-                                                    </span>
-                                                    {form.id_back &&
-                                                    previews.id_back ? (
-                                                        <PreviewImg
-                                                            className="rounded-xl shadow-lg border border-blue-900/20 w-full max-w-xs"
-                                                            src={
-                                                                previews.id_back
-                                                            }
-                                                            alt="Back Picture"
-                                                            style={{
-                                                                maxWidth: 260,
-                                                                minHeight: 120,
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <span className="text-blue-400 text-xs italic">
-                                                            No image uploaded
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="text-center text-blue-300 mt-6 text-base md:text-lg">
-                                            Please confirm all details above
-                                            before submitting. You can go back
-                                            to edit if needed.
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </>
+                        )}
 
-                            {/* Enhanced navigation buttons */}
-                            <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200 ">
-                                {currentStep > 1 && (
-                                    <button
-                                        className="flex items-center gap-2 px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
-                                        type="button"
-                                        onClick={previousStep}
-                                        disabled={submitting || navLoading.prev}
-                                    >
-                                        {navLoading.prev ? (
-                                            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                            <svg
-                                                className="w-5 h-5"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M15 19l-7-7 7-7"
+                        {isSlowNetwork && !submitting ? (
+                            <div className="space-y-8">
+                                {/* Enhanced skeleton loading */}
+                                <div className="animate-pulse">
+                                    <div className="mb-8">
+                                        <div className="flex justify-between mb-4">
+                                            {Array.from({ length: 4 }).map(
+                                                (_, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="flex items-center space-x-3"
+                                                    >
+                                                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+                                                        <div className="w-20 h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="w-1/3 h-8 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {Array.from({ length: 6 }).map(
+                                                (_, i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="space-y-3"
+                                                    >
+                                                        <div className="w-full h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                                                        <div className="w-full h-12 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Enhanced stepper */}
+                                <div className="mb-12">
+                                    <div className="w-full">
+                                        <div className="flex items-center justify-between mb-6 overflow-x-auto ">
+                                            {stepLabels.map((label, idx) => {
+                                                const stepIndex = idx + 1;
+                                                const completed =
+                                                    currentStep > stepIndex;
+                                                const active =
+                                                    currentStep === stepIndex;
+                                                return (
+                                                    <div
+                                                        key={label}
+                                                        className="min-w-[70px] flex flex-col items-center text-center relative"
+                                                    >
+                                                        <div
+                                                            className={`flex items-center justify-center rounded-full font-bold text-sm transition-all duration-300 ${
+                                                                completed
+                                                                    ? "bg-green-500 dark:bg-green-600 text-white shadow-lg"
+                                                                    : active
+                                                                    ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg ring-4 ring-blue-600/20"
+                                                                    : "bg-gray-200 dark:bg-gray-800  dark:text-gray-200 text-gray-500"
+                                                            } w-12 h-12 md:w-14 md:h-14`}
+                                                        >
+                                                            {completed ? (
+                                                                <svg
+                                                                    className="w-6 h-6"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="3"
+                                                                        d="M5 13l4 4L19 7"
+                                                                    />
+                                                                </svg>
+                                                            ) : (
+                                                                stepIndex
+                                                            )}
+                                                        </div>
+
+                                                        {/* Connection line */}
+                                                        {idx <
+                                                            stepLabels.length -
+                                                                1 && (
+                                                            <div
+                                                                className={`absolute top-6 left-1/2 w-full h-0.5 -z-10 transition-all duration-300 ${
+                                                                    currentStep >
+                                                                    stepIndex
+                                                                        ? "bg-green-500 dark:bg-green-600"
+                                                                        : "bg-gray-200 dark:bg-gray-400"
+                                                                }`}
+                                                            ></div>
+                                                        )}
+
+                                                        <div
+                                                            className={`mt-3 text-xs md:text-sm font-medium  px-2 transition-colors duration-300 ${
+                                                                active
+                                                                    ? "text-blue-600 dark:text-blue-400"
+                                                                    : completed
+                                                                    ? "text-green-600 dark:text-green-400"
+                                                                    : "text-gray-500 dark:text-gray-400"
+                                                            }`}
+                                                        >
+                                                            {label}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Progress bar */}
+                                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-green-500 dark:bg-green-600 rounded-full transition-all duration-500 ease-out"
+                                                style={{
+                                                    width: `${
+                                                        ((currentStep - 1) /
+                                                            (totalSteps - 1)) *
+                                                        100
+                                                    }%`,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Form steps with enhanced styling */}
+                                {currentStep === 1 && (
+                                    <div className="space-y-8">
+                                        <div className="border-b border-gray-200 dark:border-gray-500 pb-4">
+                                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-300 flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <svg
+                                                        className="w-5 h-5 text-blue-600"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                        />
+                                                    </svg>
+                                                </div>
+                                                Personal Information
+                                            </h2>
+                                            <p className="text-gray-600 dark:text-gray-400 mt-2">
+                                                Please provide your basic
+                                                contact information.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    First Name
+                                                </label>
+                                                <input
+                                                    name="first_name"
+                                                    value={form.first_name}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus(
+                                                            "first_name"
+                                                        )
+                                                    }
+                                                    className="input"
+                                                    placeholder="Enter your first name"
                                                 />
-                                            </svg>
-                                        )}
-                                        Previous
-                                    </button>
+                                                {errors.first_name && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.first_name}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Middle Name
+                                                </label>
+                                                <input
+                                                    name="middle_name"
+                                                    value={form.middle_name}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus(
+                                                            "middle_name"
+                                                        )
+                                                    }
+                                                    className="input"
+                                                    placeholder="Enter your middle name"
+                                                />
+                                                {errors.middle_name && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.middle_name}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Last Name
+                                                </label>
+                                                <input
+                                                    name="last_name"
+                                                    value={form.last_name}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("last_name")
+                                                    }
+                                                    className="input"
+                                                    placeholder="Enter your last name"
+                                                />
+                                                {errors.last_name && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.last_name}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="md:col-span-2 space-y-2">
+                                                <label className="required-input-label">
+                                                    Address
+                                                </label>
+                                                <input
+                                                    name="address"
+                                                    value={form.address}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("address")
+                                                    }
+                                                    className="input"
+                                                    placeholder="Street address, P.O. box, etc."
+                                                />
+                                                {errors.address && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.address}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Zip Code
+                                                </label>
+                                                <input
+                                                    name="zipCode"
+                                                    value={form.zipCode}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("zipCode")
+                                                    }
+                                                    className="input"
+                                                    maxLength={5}
+                                                    placeholder="12345"
+                                                    inputMode="numeric"
+                                                />
+                                                {errors.zipCode && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.zipCode}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    City
+                                                </label>
+                                                <input
+                                                    name="city"
+                                                    value={form.city}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("city")
+                                                    }
+                                                    className="input"
+                                                    placeholder="Enter your city"
+                                                />
+                                                {errors.city && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.city}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    State
+                                                </label>
+                                                <input
+                                                    name="state"
+                                                    value={form.state}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("state")
+                                                    }
+                                                    className="input"
+                                                    placeholder="Enter your state"
+                                                />
+                                                {errors.state && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.state}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Gender
+                                                </label>
+                                                <select
+                                                    name="gender"
+                                                    value={form.gender}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("gender")
+                                                    }
+                                                    className="input"
+                                                >
+                                                    <option value="">
+                                                        Choose Gender
+                                                    </option>
+                                                    {genderOptions.map(
+                                                        (opt) => (
+                                                            <option
+                                                                key={opt}
+                                                                value={opt}
+                                                            >
+                                                                {opt}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                                {errors.gender && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.gender}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Date of Birth
+                                                </label>
+                                                <input
+                                                    name="dob"
+                                                    type="date"
+                                                    value={form.dob}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("dob")
+                                                    }
+                                                    className="input "
+                                                />
+                                                {errors.dob && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.dob}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Phone Number
+                                                </label>
+                                                <input
+                                                    name="phone_number"
+                                                    value={form.phone_number}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus(
+                                                            "phone_number"
+                                                        )
+                                                    }
+                                                    className="input"
+                                                    placeholder="Phone number ( e.g. 555-123-4567)"
+                                                    type="tel"
+                                                    minLength={10}
+                                                    maxLength={15}
+                                                />
+                                                {errors.phone_number && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.phone_number}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="required-input-label">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    name="email"
+                                                    value={form.email}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("email")
+                                                    }
+                                                    className="input"
+                                                    placeholder="you@example.com"
+                                                    type="email"
+                                                />
+                                                <span className="text-sm text-gray-800 dark:text-gray-200 italic">
+                                                    This email address will be
+                                                    used for communication
+                                                    regarding your application.
+                                                </span>
+                                                {errors.email && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.email}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
-                                <div className="flex gap-4 ml-auto">
-                                    {currentStep < totalSteps && (
+                                {/* Step 2 */}
+                                {currentStep === 2 && (
+                                    <>
+                                        <h2 className="font-bold text-2xl mb-10 border-b-2 text-gray-700 dark:text-gray-300">
+                                            PERSONAL INFORMATION :
+                                        </h2>
+                                        <div className="space-y-8">
+                                            <div>
+                                                <label className="required-input-label">
+                                                    Monthly Income
+                                                </label>
+                                                <input
+                                                    name="income"
+                                                    placeholder="Enter your monthly income"
+                                                    value={form.income}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("income")
+                                                    }
+                                                    className="input"
+                                                />
+                                                {errors.income && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.income}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col md:flex-row gap-7">
+                                                <div className="w-full">
+                                                    <label className="label">
+                                                        Marital Status
+                                                    </label>
+                                                    <select
+                                                        name="maritalStatus"
+                                                        value={
+                                                            form.maritalStatus
+                                                        }
+                                                        onChange={handleChange}
+                                                        className="input"
+                                                    >
+                                                        <option value="">
+                                                            Select your status
+                                                        </option>
+                                                        {maritalOptions.map(
+                                                            (opt) => (
+                                                                <option
+                                                                    key={opt}
+                                                                    value={opt}
+                                                                >
+                                                                    {opt}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
+                                                </div>
+                                                <div className="w-full">
+                                                    <label className="required-input-label">
+                                                        SSN
+                                                    </label>
+                                                    <input
+                                                        name="ssn"
+                                                        value={form.ssn}
+                                                        onChange={handleChange}
+                                                        onFocus={() =>
+                                                            handleFocus("ssn")
+                                                        }
+                                                        className="input"
+                                                        maxLength={11}
+                                                        placeholder="XXX-XX-XXXX"
+                                                        inputMode="numeric"
+                                                        pattern="[0-9\-]*"
+                                                    />
+                                                    {errors.ssn && (
+                                                        <p className="input-error">
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="currentColor"
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                            {errors.ssn}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col md:flex-row gap-7">
+                                                <div className="w-full">
+                                                    <label className="label">
+                                                        Next Of Kin
+                                                    </label>
+                                                    <input
+                                                        name="nextOfKin"
+                                                        placeholder="Enter name of your next of kin"
+                                                        value={form.nextOfKin}
+                                                        onChange={handleChange}
+                                                        className="input"
+                                                    />
+                                                </div>
+                                                <div className="w-full">
+                                                    <label className="label">
+                                                        Mother's Name
+                                                    </label>
+                                                    <input
+                                                        name="motherName"
+                                                        placeholder="Enter your mother's name"
+                                                        value={form.motherName}
+                                                        onChange={handleChange}
+                                                        className="input"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col md:flex-row gap-7">
+                                                <div className="w-full">
+                                                    <label className="label">
+                                                        Hearing or Deaf?
+                                                    </label>
+                                                    <select
+                                                        name="hearingStatus"
+                                                        value={
+                                                            form.hearingStatus
+                                                        }
+                                                        onChange={handleChange}
+                                                        className="input"
+                                                    >
+                                                        <option value="">
+                                                            Select Status
+                                                        </option>
+                                                        {hearingOptions.map(
+                                                            (opt) => (
+                                                                <option
+                                                                    key={opt}
+                                                                    value={opt}
+                                                                >
+                                                                    {opt}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
+                                                </div>
+                                                <div className="w-full">
+                                                    <label className="label">
+                                                        Housing Type
+                                                    </label>
+                                                    <select
+                                                        name="housingType"
+                                                        value={form.housingType}
+                                                        onChange={handleChange}
+                                                        className="input"
+                                                    >
+                                                        <option value="">
+                                                            Select Option
+                                                        </option>
+                                                        {housingType.map(
+                                                            (opt) => (
+                                                                <option
+                                                                    key={opt}
+                                                                    value={opt}
+                                                                >
+                                                                    {opt}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="required-input-label">
+                                                    Name of your Bank's
+                                                </label>
+                                                <input
+                                                    name="bank_name"
+                                                    placeholder="Enter your bank's name"
+                                                    value={form.bank_name}
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus("bank_name")
+                                                    }
+                                                    className="input"
+                                                />
+                                                <h2 className="text-gray-600 dark:text-blue-300 text-lg font-semibold mt-8">
+                                                    Do you have Credit Card "s"?
+                                                </h2>
+                                                <div className="flex space-x-10 text-gray-800 dark:text-gray-300">
+                                                    <label>
+                                                        <input
+                                                            type="radio"
+                                                            name="has_cards"
+                                                            checked={
+                                                                form.has_cards ===
+                                                                "yes"
+                                                            }
+                                                            onChange={() =>
+                                                                handleRadio(
+                                                                    "has_cards",
+                                                                    "yes"
+                                                                )
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "has_cards"
+                                                                )
+                                                            }
+                                                        />
+                                                        <span className="text-xl font-semibold ml-2">
+                                                            Yes
+                                                        </span>
+                                                    </label>
+                                                    <label>
+                                                        <input
+                                                            type="radio"
+                                                            name="has_cards"
+                                                            checked={
+                                                                form.has_cards ===
+                                                                "no"
+                                                            }
+                                                            onChange={() =>
+                                                                handleRadio(
+                                                                    "has_cards",
+                                                                    "no"
+                                                                )
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "has_cards"
+                                                                )
+                                                            }
+                                                        />
+                                                        <span className="text-xl font-semibold ml-2">
+                                                            No
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                                {errors.has_cards && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {errors.has_cards}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            {form.has_cards === "yes" && (
+                                                <div className="flex flex-col md:flex-row gap-7">
+                                                    <div className="w-full">
+                                                        <label className="required-input-label">
+                                                            Number of Credit
+                                                            Cards
+                                                        </label>
+                                                        <input
+                                                            name="no_of_cards"
+                                                            type="number"
+                                                            value={
+                                                                form.no_of_cards
+                                                            }
+                                                            onChange={
+                                                                handleChange
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "no_of_cards"
+                                                                )
+                                                            }
+                                                            className="input"
+                                                        />
+                                                        <span className="text-slate-700 dark:text-slate-400 my-1 block">
+                                                            Note: This won't
+                                                            affect your credit
+                                                            in whatever way
+                                                        </span>
+                                                        {errors.no_of_cards && (
+                                                            <span className="input-error">
+                                                                {
+                                                                    errors.no_of_cards
+                                                                }
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="w-full">
+                                                        <label className="required-input-label">
+                                                            Credit Limit ($)
+                                                        </label>
+                                                        <input
+                                                            name="card_limit"
+                                                            value={
+                                                                form.card_limit
+                                                            }
+                                                            onChange={
+                                                                handleChange
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "card_limit"
+                                                                )
+                                                            }
+                                                            className="input"
+                                                        />
+                                                        {errors.card_limit && (
+                                                            <p className="input-error">
+                                                                <svg
+                                                                    className="w-4 h-4"
+                                                                    fill="currentColor"
+                                                                    viewBox="0 0 20 20"
+                                                                >
+                                                                    <path
+                                                                        fillRule="evenodd"
+                                                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                        clipRule="evenodd"
+                                                                    />
+                                                                </svg>
+                                                                {
+                                                                    errors.card_limit
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Step 3 */}
+                                {currentStep === 3 && (
+                                    <>
+                                        <h2 className="font-bold text-2xl mb-10 border-b-2 text-gray-700 dark:text-gray-400">
+                                            GRANT DETAILS :
+                                        </h2>
+                                        <div className="space-y-10">
+                                            <div className=" flex flex-col md:flex-row gap-7 items-center">
+                                                <div className="w-full">
+                                                    <label className="required-input-label">
+                                                        Grant Amount Category
+                                                    </label>
+                                                    <select
+                                                        name="amount_applied"
+                                                        value={
+                                                            form.amount_applied
+                                                        }
+                                                        onChange={handleChange}
+                                                        onFocus={() =>
+                                                            handleFocus(
+                                                                "amount_applied"
+                                                            )
+                                                        }
+                                                        className="input"
+                                                    >
+                                                        <option value="">
+                                                            Select a grant
+                                                            amount category
+                                                        </option>
+                                                        {grantAmountOptions.map(
+                                                            (opt) => (
+                                                                <option
+                                                                    key={opt}
+                                                                    value={opt}
+                                                                >
+                                                                    {opt}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
+                                                    {errors.amount_applied && (
+                                                        <p className="input-error">
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="currentColor"
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                            {
+                                                                errors.amount_applied
+                                                            }
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="w-full">
+                                                    <label className="required-input-label">
+                                                        Check the Grant Area you
+                                                        are interested in
+                                                    </label>
+                                                    <select
+                                                        name="grantSelect"
+                                                        value={form.grantSelect}
+                                                        onChange={handleChange}
+                                                        onFocus={() =>
+                                                            handleFocus(
+                                                                "grantSelect"
+                                                            )
+                                                        }
+                                                        className="input"
+                                                    >
+                                                        <option value="">
+                                                            Select the area
+                                                            you're interested
+                                                        </option>
+                                                        {grantOptions.map(
+                                                            (opt) => (
+                                                                <option
+                                                                    key={opt}
+                                                                    value={opt}
+                                                                >
+                                                                    {opt}
+                                                                </option>
+                                                            )
+                                                        )}
+                                                    </select>
+                                                    {errors.grantSelect && (
+                                                        <p className="input-error">
+                                                            <svg
+                                                                className="w-4 h-4"
+                                                                fill="currentColor"
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                            {errors.grantSelect}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="required-input-label">
+                                                    Describe in detail who
+                                                    you're apply for the Federal
+                                                    Government Grant
+                                                </label>
+                                                <textarea
+                                                    name="grantDescription"
+                                                    placeholder="Provide a detailed description of your grant needs"
+                                                    value={
+                                                        form.grantDescription
+                                                    }
+                                                    onChange={handleChange}
+                                                    onFocus={() =>
+                                                        handleFocus(
+                                                            "grantDescription"
+                                                        )
+                                                    }
+                                                    className="input"
+                                                    rows={6}
+                                                />
+                                                {errors.grantDescription && (
+                                                    <p className="input-error">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                        {
+                                                            errors.grantDescription
+                                                        }
+                                                    </p>
+                                                )}
+                                                <span className="text-lg my-2 block text-gray-800 dark:text-gray-300 italic">
+                                                    Be specific about your needs
+                                                    and how this grant will help
+                                                    you achieve your goals.
+                                                </span>
+                                            </div>
+                                            <div className="p-10 border-opacity-50 border-2 border-gray-600 rounded-md max-w-screen-md mx-auto px-4">
+                                                <h3 className="text-2xl font-semibold text-gray-700 dark:text-gray-300 text-center my-7">
+                                                    Upload a clear picture of
+                                                    any Government ID or Drivers
+                                                    License
+                                                </h3>
+                                                <div className="space-y-8 flex flex-col justify-center items-center">
+                                                    <div className="flex flex-col space-y-3">
+                                                        <label className="text-center text-xl mr-1 font-medium text-blue-800 dark:text-blue-400 after:content-['*'] after:text-red-500">
+                                                            Upload Image "Front
+                                                            Picture"
+                                                        </label>
+
+                                                        <input
+                                                            ref={frontInputRef}
+                                                            name="id_front"
+                                                            type="file"
+                                                            accept=".jpg,.jpeg,.png"
+                                                            onChange={
+                                                                handleChange
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "id_front"
+                                                                )
+                                                            }
+                                                            className="input"
+                                                            disabled={false}
+                                                        />
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400  mt-1">
+                                                            Accepted: jpg, jpeg,
+                                                            png — Max 20MB
+                                                        </div>
+                                                        {errors.id_front && (
+                                                            <span className="text-red-500">
+                                                                {
+                                                                    errors.id_front
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {form.id_front &&
+                                                            previews.id_front && (
+                                                                <div className="my-3 rounded-md">
+                                                                    <PreviewImg
+                                                                        src={
+                                                                            previews.id_front
+                                                                        }
+                                                                        alt="ID Front"
+                                                                        className="max-w-xs mx-auto my-3"
+                                                                        style={{
+                                                                            maxWidth: 300,
+                                                                        }}
+                                                                    />
+                                                                    <div className="flex justify-center mt-2 gap-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn-secondary px-3 py-1 text-sm flex items-center gap-2"
+                                                                            onClick={() => {
+                                                                                if (
+                                                                                    frontInputRef.current
+                                                                                )
+                                                                                    frontInputRef.current.click();
+                                                                            }}
+                                                                        >
+                                                                            Update{" "}
+                                                                            <FaEdit />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="px-3 py-1 text-red-700 focus:text-red-800"
+                                                                            onClick={() =>
+                                                                                deleteImage(
+                                                                                    "id_front"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <RiDeleteBinLine
+                                                                                size={
+                                                                                    28
+                                                                                }
+                                                                            />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                    <div className="flex flex-col space-y-3">
+                                                        <label className="text-center text-xl mr-1 font-medium text-blue-800 dark:text-blue-400 after:content-['*'] after:text-red-500">
+                                                            Upload Image "Back
+                                                            Picture"
+                                                        </label>
+
+                                                        <input
+                                                            ref={backInputRef}
+                                                            name="id_back"
+                                                            type="file"
+                                                            accept=".jpg,.jpeg,.png"
+                                                            onChange={
+                                                                handleChange
+                                                            }
+                                                            onFocus={() =>
+                                                                handleFocus(
+                                                                    "id_back"
+                                                                )
+                                                            }
+                                                            className="input"
+                                                            disabled={false}
+                                                        />
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                            Accepted: jpg, jpeg,
+                                                            png — Max 20MB
+                                                        </div>
+                                                        {errors.id_back && (
+                                                            <span className="text-red-500">
+                                                                {errors.id_back}
+                                                            </span>
+                                                        )}
+                                                        {form.id_back &&
+                                                            previews.id_back && (
+                                                                <div className="my-3 rounded-md">
+                                                                    <PreviewImg
+                                                                        src={
+                                                                            previews.id_back
+                                                                        }
+                                                                        alt="ID Back"
+                                                                        className="max-w-xs mx-auto my-3"
+                                                                        style={{
+                                                                            maxWidth: 300,
+                                                                        }}
+                                                                    />
+                                                                    <div className="flex justify-center mt-2 gap-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn-secondary px-3 py-1 text-sm flex items-center gap-2"
+                                                                            onClick={() => {
+                                                                                if (
+                                                                                    backInputRef.current
+                                                                                )
+                                                                                    backInputRef.current.click();
+                                                                            }}
+                                                                        >
+                                                                            Update{" "}
+                                                                            <FaEdit />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="text-red-700 px-3 py-1 focus:text-red-800"
+                                                                            onClick={() =>
+                                                                                deleteImage(
+                                                                                    "id_back"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <RiDeleteBinLine
+                                                                                size={
+                                                                                    28
+                                                                                }
+                                                                            />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Step 4: Review Page */}
+                                {currentStep === 4 && (
+                                    <div className="relative">
+                                        <div className="py-8 px-2 md:px-8 space-y-8 bg-gradient-to-br from-slate-900/90 via-slate-800/95 to-slate-900/90 rounded-2xl shadow-2xl border border-blue-900/10 max-w-3xl mx-auto">
+                                            <h3 className="font-bold text-2xl md:text-3xl mb-8 border-b-2 border-blue-700/30 text-blue-100 text-center tracking-wide">
+                                                Review Your Application Before
+                                                Submitting
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <ul className="space-y-3">
+                                                    {reviewFields.map(
+                                                        ({ key, label }) => {
+                                                            // Exclude card fields if not applicable
+                                                            if (
+                                                                key ===
+                                                                    "no_of_cards" &&
+                                                                form.has_cards !==
+                                                                    "yes"
+                                                            )
+                                                                return null;
+                                                            if (
+                                                                key ===
+                                                                    "card_limit" &&
+                                                                form.has_cards !==
+                                                                    "yes"
+                                                            )
+                                                                return null;
+                                                            // Hide empty fields for a cleaner review
+                                                            if (!form[key])
+                                                                return null;
+                                                            return (
+                                                                <li
+                                                                    key={key}
+                                                                    className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 bg-slate-800/60 rounded-lg px-3 py-2 overflow-auto"
+                                                                >
+                                                                    <span className="font-semibold text-blue-200 text-base md:text-lg w-44 md:w-40">
+                                                                        {label}:
+                                                                    </span>
+                                                                    <span className="text-blue-50 text-base md:text-lg break-words">
+                                                                        {
+                                                                            form[
+                                                                                key
+                                                                            ]
+                                                                        }
+                                                                    </span>
+                                                                </li>
+                                                            );
+                                                        }
+                                                    )}
+                                                </ul>
+                                                <div className="flex flex-col gap-6 items-center justify-center">
+                                                    <div className="w-full flex flex-col items-center">
+                                                        <span className="font-semibold text-blue-200 text-base md:text-lg mb-2">
+                                                            Front Image
+                                                        </span>
+                                                        {form.id_front &&
+                                                        previews.id_front ? (
+                                                            <PreviewImg
+                                                                className="rounded-xl shadow-lg border border-blue-900/20 w-full max-w-xs"
+                                                                src={
+                                                                    previews.id_front
+                                                                }
+                                                                alt="Front Picture"
+                                                                style={{
+                                                                    maxWidth: 260,
+                                                                    minHeight: 120,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span className="text-blue-400 text-xs italic">
+                                                                No image
+                                                                uploaded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="w-full flex flex-col items-center">
+                                                        <span className="font-semibold text-blue-200 text-base md:text-lg mb-2">
+                                                            Back Image
+                                                        </span>
+                                                        {form.id_back &&
+                                                        previews.id_back ? (
+                                                            <PreviewImg
+                                                                className="rounded-xl shadow-lg border border-blue-900/20 w-full max-w-xs"
+                                                                src={
+                                                                    previews.id_back
+                                                                }
+                                                                alt="Back Picture"
+                                                                style={{
+                                                                    maxWidth: 260,
+                                                                    minHeight: 120,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span className="text-blue-400 text-xs italic">
+                                                                No image
+                                                                uploaded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-center text-blue-300 mt-6 text-base md:text-lg">
+                                                Please confirm all details above
+                                                before submitting. You can go
+                                                back and edit if needed.
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Enhanced navigation buttons */}
+                                <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200">
+                                    {currentStep > 1 && (
                                         <button
-                                            className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                                            className="flex items-center gap-2 px-6 py-3 text-gray-800 bg-gray-300 hover:bg-gray-400 rounded-lg font-medium transition-colors disabled:opacity-50"
                                             type="button"
-                                            onClick={nextStep}
+                                            onClick={previousStep}
                                             disabled={
-                                                submitting || navLoading.next
+                                                submitting || navLoading.prev
                                             }
                                         >
-                                            Next
-                                            {navLoading.next ? (
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            {navLoading.prev ? (
+                                                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                                             ) : (
                                                 <svg
                                                     className="w-5 h-5"
@@ -2285,28 +2410,61 @@ const ApplicationPage = () => {
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                         strokeWidth="2"
-                                                        d="M9 5l7 7-7 7"
+                                                        d="M15 19l-7-7 7-7"
                                                     />
                                                 </svg>
                                             )}
+                                            Previous
                                         </button>
                                     )}
 
-                                    {currentStep === totalSteps && (
-                                        <>
-                                            <div className="flex gap-4 flex-col md:flex-row">
+                                    <div className="flex gap-4 ml-auto flex-wrap justify-center md:justify-end">
+                                        {currentStep < totalSteps && (
+                                            <button
+                                                className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                                                type="button"
+                                                onClick={nextStep}
+                                                disabled={
+                                                    submitting ||
+                                                    navLoading.next
+                                                }
+                                            >
+                                                Next
+                                                {navLoading.next ? (
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <svg
+                                                        className="w-5 h-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M9 5l7 7-7 7"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        )}
+
+                                        {currentStep === totalSteps && (
+                                            <div className="flex flex-col gap-4 md:flex-row">
                                                 <button
-                                                    className="md:px-6 px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                                    className="md:px-6 px-2 py-3 text-gray-100 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50"
                                                     type="button"
-                                                    onClick={() =>
-                                                        setCurrentStep(1)
-                                                    }
+                                                    onClick={() => {
+                                                        setCurrentStep(1);
+                                                        scrollToFormTop();
+                                                    }}
                                                     disabled={submitting}
                                                 >
                                                     Edit Details
                                                 </button>
                                                 <button
-                                                    className="flex items-center gap-2 px-4 py-3 md:px-8 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                                                    className="flex items-center gap-1 md:gap-2 px-2 py-3 md:px-8 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                                                     type="button"
                                                     onClick={handleSubmit}
                                                     disabled={
@@ -2329,12 +2487,12 @@ const ApplicationPage = () => {
                                                     Confirm & Submit
                                                 </button>
                                             </div>
-                                        </>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </>
-                    )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

@@ -23,7 +23,7 @@ const SuccessPage = () => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen flex items-center justify-center py-16  px-4 mt-32 relative">
+        <div className="bg-gray-50 dark:bg-gray-950 min-h-screen flex items-center justify-center py-16 px-4 mt-32 relative">
             {/* Confetti Effect */}
             {showConfetti && (
                 <div className="fixed inset-0 pointer-events-none z-10">
@@ -59,12 +59,26 @@ const SuccessPage = () => {
                 {/* Enhanced Success Icon */}
                 <div className="relative inline-block">
                     <div className="relative">
-                        <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto bg-white rounded-full shadow-xl border-4 border-green-500 flex items-center justify-center relative overflow-hidden">
+                        <div
+                            className="w-24 h-24 sm:w-32 sm:h-32 mx-auto 
+        bg-white dark:bg-gray-900 
+        rounded-full shadow-xl 
+        border-4 border-green-500 
+        flex items-center justify-center 
+        relative overflow-hidden"
+                        >
                             {/* Animated background pulse */}
-                            <div className="absolute inset-0 bg-green-500/10 rounded-full animate-pulse"></div>
+                            <div
+                                className="absolute inset-0 
+          bg-green-500/10 dark:bg-green-400/10 
+          rounded-full animate-pulse"
+                            ></div>
+
                             {/* Main checkmark */}
                             <svg
-                                className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 relative z-10"
+                                className="w-12 h-12 sm:w-16 sm:h-16 
+            text-green-500 dark:text-green-400 
+            relative z-10"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -78,10 +92,18 @@ const SuccessPage = () => {
                                 />
                             </svg>
                         </div>
+
                         {/* Outer glow rings */}
-                        <div className="absolute inset-0 w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full border-2 border-green-300/30 animate-ping"></div>
                         <div
-                            className="absolute inset-0 w-28 h-28 sm:w-36 sm:h-36 mx-auto rounded-full border border-green-200/20 animate-ping"
+                            className="absolute inset-0 w-24 h-24 sm:w-32 sm:h-32 mx-auto 
+        rounded-full border-2 border-green-300/30 
+        dark:border-green-400/20 animate-ping"
+                        ></div>
+
+                        <div
+                            className="absolute inset-0 w-28 h-28 sm:w-36 sm:h-36 mx-auto 
+          rounded-full border border-green-200/20 
+          dark:border-green-500/20 animate-ping"
                             style={{ animationDelay: "0.5s" }}
                         ></div>
                     </div>
@@ -89,37 +111,48 @@ const SuccessPage = () => {
 
                 {/* Congratulations Text */}
                 <div className="space-y-4">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-600 tracking-tight">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-600 dark:text-green-400 tracking-tight">
                         CONGRATULATIONS!
                     </h1>
 
-                    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 dark:text-gray-100">
                         🎉 Application Submitted Successfully!
                     </h2>
                 </div>
 
                 {/* Description */}
-                <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-200">
-                    <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-200 dark:border-gray-800">
+                    <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
                         Your grant application has been received and is now
-                        under review. Our team will carefully evaluate your
-                        submission and contact you with updates.
+                        under review. Confirmation email have been sent to your
+                        email. Our team will carefully evaluate your submission
+                        and contact you with updates via the Phone number or
+                        email address you provided when applying.
+                    </p>
+                    <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-6 border-t pt-4 border-gray-200 dark:border-gray-700">
+                        <i>
+                            Note: If you do not receive a confirmation email
+                            within the next few minutes, please check your spam
+                            or junk folder. If you still cannot find it, feel
+                            free to text our support team for assistance.{" "}
+                            <span>(805) 625-9810</span>
+                        </i>
                     </p>
 
                     {/* Reference ID Box */}
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                        <p className="text-sm text-gray-500 mb-2">
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                             Your Reference ID:
                         </p>
                         <div className="flex items-center justify-center gap-3">
-                            <code className="text-lg sm:text-xl font-mono font-bold text-gray-900 bg-white px-4 py-2 rounded-lg border">
+                            <code className="text-lg sm:text-xl font-mono font-bold text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 px-4 py-2 rounded-lg border dark:border-gray-700">
                                 {reference}
                             </code>
                             <button
                                 onClick={() =>
                                     navigator.clipboard.writeText(reference)
                                 }
-                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                 title="Copy to clipboard"
                             >
                                 <svg
@@ -141,7 +174,7 @@ const SuccessPage = () => {
                 </div>
 
                 {/* Important Notice */}
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
+                <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-xl p-4 sm:p-6">
                     <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
                             <svg
@@ -157,10 +190,10 @@ const SuccessPage = () => {
                             </svg>
                         </div>
                         <div className="text-left">
-                            <h3 className="font-semibold text-blue-800 mb-1">
+                            <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
                                 Important:
                             </h3>
-                            <p className="text-blue-700 text-sm sm:text-base">
+                            <p className="text-blue-700 dark:text-blue-200 text-sm sm:text-base">
                                 Please save your reference number and share it
                                 with your assigned agent. You'll need this
                                 number to track your application status.
@@ -172,8 +205,8 @@ const SuccessPage = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                     <Link
-                        to="/"
-                        className="text-lg flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+                        to="/start-application"
+                        className="flex-1 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
                     >
                         Start New Application
                     </Link>
