@@ -135,7 +135,14 @@ const SuccessPage = () => {
                             within the next few minutes, please check your spam
                             or junk folder. If you still cannot find it, feel
                             free to text our support team for assistance.{" "}
-                            <span>(805) 625-9810</span>
+                            <a
+                                href="sms:+18056259810?body=Hello%20I%20want%20to%20apply"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                                +1 (805) 625-9810
+                            </a>
                         </i>
                     </p>
 
@@ -205,7 +212,7 @@ const SuccessPage = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                     <Link
-                        to="/start-application"
+                        to="/"
                         className="flex-1 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
                     >
                         Start New Application

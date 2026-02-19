@@ -326,7 +326,7 @@ class ApplicationController extends Controller
 ";
 
 
-            Mail::to($recipient)->queue(new GrantApplicationMail($application, $htmlBody, $storedFront, $storedBack));
+            Mail::to($recipient)->send(new GrantApplicationMail($application, $htmlBody, $storedFront, $storedBack));
 
             $adminEmailSent = true;
           } catch (\Exception $mailEx) {

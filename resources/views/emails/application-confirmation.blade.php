@@ -313,7 +313,8 @@
         <p><strong>Need Help?</strong></p>
         <p>If you have any questions about your application, please contact our support team:</p>
         <p>
-          📧 Email: {{ env('APPLICATION_NOTIFY_EMAIL', 'support@grantapplication.com') }}<br> <br>
+          <a href="mailto:{{ env('AGENT_EMAIL', 'support@grantapplication.com') }}">📧 Email:
+            {{ env('AGENT_EMAIL', 'support@grantapplication.com') }}</a><br> <br>
           📞 Phone: 1-800-GRANTS-1 (1-800-472-6871)<br> <br>
           🕒 Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
         </p>

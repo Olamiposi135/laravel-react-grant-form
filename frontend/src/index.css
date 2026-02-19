@@ -5,25 +5,21 @@
 /* ===== HEADERS ===== */
 .formHeader {
     @apply bg-center bg-cover brightness-90 min-h-[40vh] m-auto relative;
-    background-image: url("../src/assets/images/computer-header.png");
+    background-image: url("../src/assets/images/computer-header.webp");
 }
 
 /* ===== FORM PAGE ===== */
 .formPage {
     @apply bg-center bg-contain bg-no-repeat;
-    background-image: linear-gradient(
-            rgba(249, 249, 251, 0.9),
-            rgba(249, 249, 251, 0.9)
-        ),
-        url("../src/assets/images/grant-logo.png");
+    background-image:
+        linear-gradient(rgba(249, 249, 251, 0.9), rgba(249, 249, 251, 0.9)),
+        url("../src/assets/images/grant-logo.webp");
 }
 
 @media (prefers-color-scheme: dark) {
     .formPage {
-        background-image: linear-gradient(
-                rgba(23, 23, 23, 0.9),
-                rgba(23, 23, 23, 0.9)
-            ),
+        background-image:
+            linear-gradient(rgba(23, 23, 23, 0.9), rgba(23, 23, 23, 0.9)),
             url("../src/assets/images/grant-logo.webp");
     }
 }

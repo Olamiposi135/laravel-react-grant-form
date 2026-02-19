@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import topBanner from "../assets/images/usa.logo.png";
 import logo from "../assets/images/logo.png";
-import { FiMenu } from "react-icons/fi";
-import { AiOutlineClose } from "react-icons/ai";
-import { FcHome } from "react-icons/fc";
-import { FcAbout } from "react-icons/fc";
-import { FcBusiness } from "react-icons/fc";
-import { FcAnswers } from "react-icons/fc";
-import { FcPhone } from "react-icons/fc";
 
 import { Link } from "react-router-dom";
 

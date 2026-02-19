@@ -41,7 +41,9 @@ const Footer = () => {
                                 />
                             </a>
                             <a
-                                href="#"
+                                href="sms:+18056259810?body=Hello%20I%20want%20to%20apply"
+                                rel="noopener noreferrer"
+                                target="_blank"
                                 className="text-gray-300 hover:text-white transition-colors"
                             >
                                 <FcSms
