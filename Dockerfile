@@ -31,14 +31,12 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 # Permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Clear config and cache
-RUN php artisan config:clear && \
-    php artisan cache:clear && \
-    php artisan optimize:clear
+
 
 EXPOSE 80
 
 
 # Start Apache in foreground
-CMD php artisan migrate --force && apache2-foreground
+#config first, then run migrations
+CMD php artisan config:clear && php artisan cache:clear && php artisan migrate --force && apache2-foreground
 
