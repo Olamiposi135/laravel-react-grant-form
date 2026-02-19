@@ -9,44 +9,8 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Handle X-XSRF-Token Header
-    RewriteCond %{HTTP:x-xsrf-token} .
-    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
-
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
-
-    # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # Redirect all requests to index.php
     RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [L]
-
-     # Cache static assets (1 year)
-    <IfModule mod_expires.c>
-        ExpiresActive On
-        ExpiresByType text/css "access plus 1 year"
-        ExpiresByType application/javascript "access plus 1 year"
-        ExpiresByType application/x-javascript "access plus 1 year"
-        ExpiresByType image/jpeg "access plus 1 year"
-        ExpiresByType image/png "access plus 1 year"
-        ExpiresByType image/svg+xml "access plus 1 year"
-        ExpiresByType image/gif "access plus 1 year"
-    </IfModule>
-
-    # Short cache for manifest.json to detect updates quickly
-    <FilesMatch "manifest.json">
-       Header set Cache-Control "no-cache, must-revalidate"
-    </FilesMatch>
-    
-    <FilesMatch "\.(html|htm)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-    Header set Pragma "no-cache"
-    Header set Expires 0
-</FilesMatch>
-
-<FilesMatch "\.(css|js|png|jpg|jpeg|svg|gif|webp)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-</FilesMatch>
 </IfModule>
