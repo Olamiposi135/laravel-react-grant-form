@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
+  // this can be removed for another migration, but it is needed for this one because of the unique reference field
+
+  public $withinTransaction = false;
   /**
    * Run the migrations.
    */
