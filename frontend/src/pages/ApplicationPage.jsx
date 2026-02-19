@@ -241,7 +241,7 @@ const ApplicationPage = () => {
             const effective = conn.effectiveType || "";
             const saveData = conn.saveData || false;
             setIsSlowNetwork(
-                saveData || effective === "2g" || effective === "slow-2g"
+                saveData || effective === "2g" || effective === "slow-2g",
             );
         };
         updateSlow();
@@ -283,7 +283,7 @@ const ApplicationPage = () => {
         const digits = String(value).replace(/\D/g, "").slice(0, 9);
         if (digits.length > 5) {
             return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(
-                5
+                5,
             )}`;
         } else if (digits.length > 3) {
             return `${digits.slice(0, 3)}-${digits.slice(3)}`;
@@ -308,7 +308,7 @@ const ApplicationPage = () => {
             // If user already uploaded a file for this field, ask before overriding
             if (previews[name]) {
                 const ok = window.confirm(
-                    "You already uploaded an image. Do you want to replace it?"
+                    "You already uploaded an image. Do you want to replace it?",
                 );
                 if (!ok) {
                     // Reset input value so same file can be re-selected later if needed
@@ -446,7 +446,7 @@ const ApplicationPage = () => {
         // field expected to be "id_front" or "id_back"
         if (!previews[field] && !form[field]) return;
         const ok = window.confirm(
-            "Delete this image? You can upload a new one after deleting."
+            "Delete this image? You can upload a new one after deleting.",
         );
         if (!ok) return;
 
@@ -493,13 +493,13 @@ const ApplicationPage = () => {
         const maxBytes = 20480 * 1024;
         if (form.id_front && form.id_front.size > maxBytes) {
             setSubmitError(
-                "Front ID file too large (max 20MB). Please replace."
+                "Front ID file too large (max 20MB). Please replace.",
             );
             return;
         }
         if (form.id_back && form.id_back.size > maxBytes) {
             setSubmitError(
-                "Back ID file too large (max 20MB). Please replace."
+                "Back ID file too large (max 20MB). Please replace.",
             );
             return;
         }
@@ -536,7 +536,6 @@ const ApplicationPage = () => {
 
             const fallbackBase = safeEnv || "http://localhost:8000";
             const tryUrls = [
-                "/api/application/submit",
                 `${fallbackBase.replace(/\/$/, "")}/api/application/submit`,
             ];
 
@@ -589,7 +588,7 @@ const ApplicationPage = () => {
 
                         console.error(
                             `Client error ${res.status} at ${url}:`,
-                            res.data
+                            res.data,
                         );
                         break; // Don't try other URLs for client errors
                     }
@@ -614,7 +613,7 @@ const ApplicationPage = () => {
                             "Something went wrong with your submission. Please try again.";
                         console.error(
                             `Unexpected status ${res.status} at ${url}:`,
-                            res
+                            res,
                         );
                         break;
                     }
@@ -626,7 +625,7 @@ const ApplicationPage = () => {
                         console.error(
                             "Invalid success response at",
                             url,
-                            res.data
+                            res.data,
                         );
                         break; // Don't try other URLs for invalid responses
                     }
@@ -730,7 +729,7 @@ const ApplicationPage = () => {
             // Hide spinner-only UI and show the form with the error
             setShowSpinnerOnly(false);
             setSubmitError(
-                "An unexpected error occurred. Please refresh the page and try again."
+                "An unexpected error occurred. Please refresh the page and try again.",
             );
         } finally {
             // Always cleanup
@@ -1071,7 +1070,7 @@ const ApplicationPage = () => {
                                                         <div className="w-10 h-10 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
                                                         <div className="w-20 h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
                                                     </div>
-                                                )
+                                                ),
                                             )}
                                         </div>
                                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
@@ -1089,7 +1088,7 @@ const ApplicationPage = () => {
                                                         <div className="w-full h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
                                                         <div className="w-full h-12 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
                                                     </div>
-                                                )
+                                                ),
                                             )}
                                         </div>
                                     </div>
@@ -1117,8 +1116,8 @@ const ApplicationPage = () => {
                                                                 completed
                                                                     ? "bg-green-500 dark:bg-green-600 text-white shadow-lg"
                                                                     : active
-                                                                    ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg ring-4 ring-blue-600/20"
-                                                                    : "bg-gray-200 dark:bg-gray-800  dark:text-gray-200 text-gray-500"
+                                                                      ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg ring-4 ring-blue-600/20"
+                                                                      : "bg-gray-200 dark:bg-gray-800  dark:text-gray-200 text-gray-500"
                                                             } w-12 h-12 md:w-14 md:h-14`}
                                                         >
                                                             {completed ? (
@@ -1159,8 +1158,8 @@ const ApplicationPage = () => {
                                                                 active
                                                                     ? "text-blue-600 dark:text-blue-400"
                                                                     : completed
-                                                                    ? "text-green-600 dark:text-green-400"
-                                                                    : "text-gray-500 dark:text-gray-400"
+                                                                      ? "text-green-600 dark:text-green-400"
+                                                                      : "text-gray-500 dark:text-gray-400"
                                                             }`}
                                                         >
                                                             {label}
@@ -1225,7 +1224,7 @@ const ApplicationPage = () => {
                                                     onChange={handleChange}
                                                     onFocus={() =>
                                                         handleFocus(
-                                                            "first_name"
+                                                            "first_name",
                                                         )
                                                     }
                                                     className="input"
@@ -1259,7 +1258,7 @@ const ApplicationPage = () => {
                                                     onChange={handleChange}
                                                     onFocus={() =>
                                                         handleFocus(
-                                                            "middle_name"
+                                                            "middle_name",
                                                         )
                                                     }
                                                     className="input"
@@ -1475,7 +1474,7 @@ const ApplicationPage = () => {
                                                             >
                                                                 {opt}
                                                             </option>
-                                                        )
+                                                        ),
                                                     )}
                                                 </select>
                                                 {errors.gender && (
@@ -1540,7 +1539,7 @@ const ApplicationPage = () => {
                                                     onChange={handleChange}
                                                     onFocus={() =>
                                                         handleFocus(
-                                                            "phone_number"
+                                                            "phone_number",
                                                         )
                                                     }
                                                     className="input"
@@ -1670,7 +1669,7 @@ const ApplicationPage = () => {
                                                                 >
                                                                     {opt}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                 </div>
@@ -1759,7 +1758,7 @@ const ApplicationPage = () => {
                                                                 >
                                                                     {opt}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                 </div>
@@ -1784,7 +1783,7 @@ const ApplicationPage = () => {
                                                                 >
                                                                     {opt}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                 </div>
@@ -1818,12 +1817,12 @@ const ApplicationPage = () => {
                                                             onChange={() =>
                                                                 handleRadio(
                                                                     "has_cards",
-                                                                    "yes"
+                                                                    "yes",
                                                                 )
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "has_cards"
+                                                                    "has_cards",
                                                                 )
                                                             }
                                                         />
@@ -1842,12 +1841,12 @@ const ApplicationPage = () => {
                                                             onChange={() =>
                                                                 handleRadio(
                                                                     "has_cards",
-                                                                    "no"
+                                                                    "no",
                                                                 )
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "has_cards"
+                                                                    "has_cards",
                                                                 )
                                                             }
                                                         />
@@ -1891,7 +1890,7 @@ const ApplicationPage = () => {
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "no_of_cards"
+                                                                    "no_of_cards",
                                                                 )
                                                             }
                                                             className="input"
@@ -1923,7 +1922,7 @@ const ApplicationPage = () => {
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "card_limit"
+                                                                    "card_limit",
                                                                 )
                                                             }
                                                             className="input"
@@ -1973,7 +1972,7 @@ const ApplicationPage = () => {
                                                         onChange={handleChange}
                                                         onFocus={() =>
                                                             handleFocus(
-                                                                "amount_applied"
+                                                                "amount_applied",
                                                             )
                                                         }
                                                         className="input"
@@ -1990,7 +1989,7 @@ const ApplicationPage = () => {
                                                                 >
                                                                     {opt}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                     {errors.amount_applied && (
@@ -2023,7 +2022,7 @@ const ApplicationPage = () => {
                                                         onChange={handleChange}
                                                         onFocus={() =>
                                                             handleFocus(
-                                                                "grantSelect"
+                                                                "grantSelect",
                                                             )
                                                         }
                                                         className="input"
@@ -2040,7 +2039,7 @@ const ApplicationPage = () => {
                                                                 >
                                                                     {opt}
                                                                 </option>
-                                                            )
+                                                            ),
                                                         )}
                                                     </select>
                                                     {errors.grantSelect && (
@@ -2077,7 +2076,7 @@ const ApplicationPage = () => {
                                                     onChange={handleChange}
                                                     onFocus={() =>
                                                         handleFocus(
-                                                            "grantDescription"
+                                                            "grantDescription",
                                                         )
                                                     }
                                                     className="input"
@@ -2130,7 +2129,7 @@ const ApplicationPage = () => {
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "id_front"
+                                                                    "id_front",
                                                                 )
                                                             }
                                                             className="input"
@@ -2179,7 +2178,7 @@ const ApplicationPage = () => {
                                                                             className="px-3 py-1 text-red-700 focus:text-red-800"
                                                                             onClick={() =>
                                                                                 deleteImage(
-                                                                                    "id_front"
+                                                                                    "id_front",
                                                                                 )
                                                                             }
                                                                         >
@@ -2209,7 +2208,7 @@ const ApplicationPage = () => {
                                                             }
                                                             onFocus={() =>
                                                                 handleFocus(
-                                                                    "id_back"
+                                                                    "id_back",
                                                                 )
                                                             }
                                                             className="input"
@@ -2256,7 +2255,7 @@ const ApplicationPage = () => {
                                                                             className="text-red-700 px-3 py-1 focus:text-red-800"
                                                                             onClick={() =>
                                                                                 deleteImage(
-                                                                                    "id_back"
+                                                                                    "id_back",
                                                                                 )
                                                                             }
                                                                         >
@@ -2323,7 +2322,7 @@ const ApplicationPage = () => {
                                                                     </span>
                                                                 </li>
                                                             );
-                                                        }
+                                                        },
                                                     )}
                                                 </ul>
                                                 <div className="flex flex-col gap-6 items-center justify-center">
