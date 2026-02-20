@@ -287,7 +287,7 @@ class ApplicationController extends Controller
         unset($emailData['id_front'], $emailData['id_back']);
         $emailData['application_id'] = $application->id;
 
-        $recipient = config('mail.application_notify_email', env('APPLICATION_NOTIFY_EMAIL', 'admin@example.com'));
+        $recipient = config('mail.application_notify_email');
 
         // Send admin notification email with retry logic
         $maxAttempts = 3;

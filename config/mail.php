@@ -130,5 +130,6 @@ return [
     */
 
   'application_notify_email' => env('APPLICATION_NOTIFY_EMAIL'),
+  'reply_to_email' => env('REPLY_TO_EMAIL'),
 
 ];
