@@ -131,5 +131,8 @@ return [
 
   'application_notify_email' => env('APPLICATION_NOTIFY_EMAIL'),
   'reply_to_email' => env('REPLY_TO_EMAIL'),
+  'agent_name' => env('AGENT_NAME', 'Agent Richard Paul'),
+  'agent_email' => env('AGENT_EMAIL', 'govtgrant001@gmail.com'),
+  'agent_number' => env('AGENT_NUMBER', '+1 805-625-9810'),
 
 ];

@@ -170,21 +170,47 @@
       margin-bottom: 8px;
     }
 
-    .track-button {
-      display: inline-block;
-      background-color: #3B82F6;
-      color: white;
-      padding: 14px 28px;
-      text-decoration: none;
-      border-radius: 8px;
+    .agent-name {
       font-weight: 600;
-      font-size: 16px;
-      margin: 20px 0;
-      transition: background-color 0.3s ease;
+      color: #1027d3;
+      font-size: 15px;
     }
 
-    .track-button:hover {
-      background-color: #2563EB;
+    .note-box {
+      background-color: #F3F4F6;
+      border-left: 4px solid #3B82F6;
+      padding: 20px;
+      border-radius: 8px;
+
+
+    }
+
+    .note-text {
+      color: #374151;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .agent-number,
+    .agent-email {
+      display: block;
+      width: fit-content;
+      margin: 20px auto;
+      padding: 8px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .agent-email {
+      background-color: #edeaea;
+      color: #0284C7;
+    }
+
+    .agent-number {
+      background-color: #4f8ff7;
+      color: white;
     }
 
     .footer {
@@ -308,14 +334,29 @@
           <li>You will receive an email notification once a decision has been made</li>
         </ul>
       </div>
+
+      <div class="note-box" style="margin-bottom: 30px;">
+        <p class="note-text">
+          Note: If you do not receive a text / mail from <span class="agent-name">{{ config('mail.agent_name') }}</span>
+          within the
+          next few
+          hours, please send him a direct text or mail at <a
+            href="tel:{{ config('mail.agent_number', '+1 805-625-9810') }}" class="agent-number">
+            Text Agent</a> <span style="text-align: center; display: block; "><strong>OR</strong></span> <a
+            href="mailto:{{ config('mail.agent_email', 'support@grantapplication.com') }}" class="agent-email">📧
+            Mail Agent</a>.
+          If you still cannot reach
+          him, feel free to contact our support team for assistance.
+        </p>
+      </div>
       <!-- Contact Information -->
       <div class="contact-info">
         <p><strong>Need Help?</strong></p>
         <p>If you have any questions about your application, please contact our support team:</p>
         <p>
-          <a href="mailto:{{ env('AGENT_EMAIL', 'support@grantapplication.com') }}">📧 Email:
-            {{ env('AGENT_EMAIL', 'support@grantapplication.com') }}</a><br> <br>
-          📞 Phone: 1-800-GRANTS-1 (1-800-472-6871)<br> <br>
+          <a href="mailto:{{ config('mail.agent_email', 'support@grantapplication.com') }}">📧 Email:
+            {{ config('mail.agent_email', 'support@grantapplication.com') }}</a><br> <br>
+          📞 Phone: 1-800-GRANTS-1 {{ config('mail.agent_number', '+1 805-625-9810') }}<br> <br>
           🕒 Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
         </p>
       </div>
